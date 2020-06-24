@@ -1,34 +1,93 @@
+import pandas as pd
+import os
+import torch
+# import torch.optim as optim
+# import torch.nn as nn
+from torch.autograd import Variable
+import numpy as np
+import model as model
+import data
+import cv2
 from PIL import Image
-from torchvision import transforms
-from model import net
-from torch.autograd import Variable as V
-import torch as t
- 
-trans=transforms.Compose([
-            # transforms.Scale(256),
-            # transforms.CenterCrop(224),
-            transforms.ToTensor(),
-             transforms.Normalize((0.1307,), (0.3081,))
-        ])
- 
-#读入图片
-img = Image.open('Fu.jpg').convert('L')
 
-img=trans(img)#这里经过转换后输出的input格式是[C,H,W],网络输入还需要增加一维批量大小B
-img = img.unsqueeze(0)#增加一维，输出的img格式为[1,C,H,W]
+trainpath = 'dataset/train/'
 
-pred_model = net()
-pred_model.cuda()#导入网络模型
-pred_model.eval()
+words = os.listdir(trainpath)
+words = np.array(words)
+img_size = (128, 128)
 
-pred_model = t.nn.DataParallel(pred_model)
-pred_model.load_state_dict(t.load('model_save/model_parameters.pth.tar'))#加载训练好的模型文件
+net = model.net()
+if torch.cuda.is_available():
+    net.cuda()
+net.eval()
+
+
+if __name__ == '__main__':
+    checkpoint = model.load_checkpoint()
+    net.load_state_dict(checkpoint['state_dict'])
+
+    img = np.asarray(Image.open('qie.jpg').convert('L'))
+    img = cv2.resize(img, img_size)
+    img = np.array(img)
+    img.astype(np.float)
+
+    pred_choice = []
+    img = torch.from_numpy(img)
+    char = Variable(img).cuda().float()
+    char = char.view(-1, 1, 128, 128)
+
+    output = net(char)
+    output = output.cpu()
+    output = output.data.numpy()
+
+    index = np.argmax(output)
+    pred_choice.append(index)
+    pre = np.array(pred_choice)
+    label_index = pre[0]
+    predict = words[label_index]
+    predict = predict.flatten()
+
+    print(predict)
+
+# from PIL import Image
+# from torchvision import transforms
+# from model import net
+# from torch.autograd import Variable as V
+# import torch as t
+# import data as data
  
-input = V(img.cuda())
-score = pred_model(input)#将图片输入网络得到输出
-probability = t.nn.functional.softmax(score,dim=1)#计算softmax，即该图片属于各类的概率
-max_value,index = t.max(probability,1)#找到最大概率对应的索引号，该图片即为该索引号对应的类别
-print(index)
+
+# trainpath = 'dataset/train/'
+# words = os.listdir(trainpath)   
+# words = np.array(words)
+# # trainset = data.TrainSet(eval=False)
+# # class_name = trainset.classes
+# # print(class_name)
+# trans=transforms.Compose([
+#             transforms.Resize(128),
+#             # transforms.CenterCrop(224),
+#             transforms.ToTensor(),
+#              transforms.Normalize((0.1307,), (0.3081,))
+#         ])
+ 
+# #读入图片
+# img = Image.open('Fu.jpg').convert('L')
+
+# img=trans(img)#这里经过转换后输出的input格式是[C,H,W],网络输入还需要增加一维批量大小B
+# img = img.unsqueeze(0)#增加一维，输出的img格式为[1,C,H,W]
+
+# pred_model = net()
+# pred_model.cuda()#导入网络模型
+# pred_model.eval()
+
+# # pred_model = t.nn.DataParallel(pred_model)
+# pred_model.load_state_dict(t.load('model.pth'))#加载训练好的模型文件
+ 
+# input = V(img.cuda())
+# score = pred_model(input)#将图片输入网络得到输出
+# probability = t.nn.functional.softmax(score,dim=1)#计算softmax，即该图片属于各类的概率
+# max_value,index = t.max(probability, 1)#找到最大概率对应的索引号，该图片即为该索引号对应的类别
+# print(index)
 
 
 # import torch

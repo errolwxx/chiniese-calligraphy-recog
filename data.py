@@ -28,6 +28,7 @@ def loadOneWord(order):
     # create a characters * images matrix
     # len(array) returns count of the upper dimension(layer). np.zeros returns a matrix consituted by 0. unit8 is unsigned integer in 8bit
     labels[:, order] = 1   # change all the order-th item in the second dimension to 1
+    # print(labels)
     return datas, labels
 
 def transData():
@@ -44,6 +45,7 @@ def transData():
 
     np.save('data.npy', datas)
     np.save('label.npy', labels)
+    # print(labels)
 
 class TrainSet(data.Dataset):
     def __init__(self, eval=False):

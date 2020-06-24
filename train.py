@@ -92,3 +92,6 @@ if __name__ == '__main__':
         model.save_checkpoint(checkpoint)
 
         eval(epoch)
+    
+        model_path = 'model.pth'
+        torch.save(net.state_dict(), model_path)
